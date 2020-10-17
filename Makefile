@@ -22,8 +22,8 @@ threaded_bucketsort.o: threaded_bucketsort.cpp threaded_bucketsort.hpp
 	g++ -c threaded_bucketsort.cpp 
 
 #Executable for counter
-counter: counter_main.o threaded_counter.o tas_lock.o ttas_lock.o ticket_lock.o
-	g++ counter_main.o  threaded_counter.o tas_lock.o ttas_lock.o ticket_lock.o -pthread -g -o counter
+counter: counter_main.o threaded_counter.o tas_lock.o ttas_lock.o ticket_lock.o sense_barrier.o
+	g++ counter_main.o  threaded_counter.o tas_lock.o ttas_lock.o ticket_lock.o sense_barrier.o -pthread -g -o counter
 
 #Object Files for counter
 counter_main.o: counter_main.cpp
@@ -42,6 +42,10 @@ ttas_lock.o: conc_primitives/ttas_lock.cpp conc_primitives/ttas_lock.hpp
 
 ticket_lock.o: conc_primitives/ticket_lock.cpp conc_primitives/ticket_lock.hpp
 	g++ -c conc_primitives/ticket_lock.cpp
+
+sense_barrier.o: conc_primitives/sense_barrier.cpp conc_primitives/sense_barrier.hpp
+	g++ -c conc_primitives/sense_barrier.cpp
+
 
 #Clean
 clean:

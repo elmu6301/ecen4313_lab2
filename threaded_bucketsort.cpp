@@ -27,7 +27,7 @@ pthread_mutex_t * locks;
 
 size_t NUM_THREADS;
 size_t NUM_BUCKETS; 
-pthread_barrier_t bar;
+pthread_barrier_t p_bar;
 
 
 
@@ -46,7 +46,7 @@ void global_init()
 	for(int i = 0; i < NUM_BUCKETS; i++){
 		locks[i] = PTHREAD_MUTEX_INITIALIZER; 
 	}
-	pthread_barrier_init(&bar, NULL, NUM_THREADS);
+	pthread_barrier_init(&p_bar, NULL, NUM_THREADS);
 
 }
 
@@ -57,7 +57,7 @@ void global_cleanup()
 {
 	free(threads);
 	delete locks; 
-	pthread_barrier_destroy(&bar);
+	pthread_barrier_destroy(&p_bar);
 }
 
 
@@ -120,17 +120,17 @@ void *bucketsort_thread(void *args)
 	std::list<int> * buckets = ((struct threaded_bucketsort_args *)args)->buckets;
 	int max = ((struct threaded_bucketsort_args *)args)->max; 
 	
-	pthread_barrier_wait(&bar);
+	pthread_barrier_wait(&p_bar);
 	if (tid == 1)
 	{
 		clock_gettime(CLOCK_MONOTONIC, &start);
 	}
-	pthread_barrier_wait(&bar);
+	pthread_barrier_wait(&p_bar);
 
 	bucketsort(array, max, buckets); 
 	
 
-	pthread_barrier_wait(&bar);
+	pthread_barrier_wait(&p_bar);
 	if (tid == 1)
 	{
 		clock_gettime(CLOCK_MONOTONIC, &end);
