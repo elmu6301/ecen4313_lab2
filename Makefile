@@ -22,13 +22,15 @@ threaded_bucketsort.o: threaded_bucketsort.cpp threaded_bucketsort.hpp
 	g++ -c threaded_bucketsort.cpp 
 
 #Executable for counter
-counter: counter_main.o
-	g++ counter_main.o -o counter
+counter: counter_main.o threaded_counter.o array_splitter.o
+	g++ counter_main.o  threaded_counter.o array_splitter.o -pthread -g -o counter
 
 #Object Files for counter
 counter_main.o: counter_main.cpp
 	g++ -c counter_main.cpp
 
+threaded_counter.o: threaded_counter.cpp threaded_counter.hpp
+	g++ -c threaded_counter.cpp 
 
 #Clean
 clean:

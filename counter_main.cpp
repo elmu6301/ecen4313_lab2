@@ -19,6 +19,7 @@ Lab 2:
 using namespace std; 
 
 //Developer includes
+#include "threaded_counter.hpp"
 
 //Global Variables
 char my_name[] = "Elena Murray"; 
@@ -46,7 +47,8 @@ int main(int argc, char* argv[]){
     char opt; //stores the option value
     int num_threads = 1; //stores the number of threads to create, set to default of 1 thread (i.e. master thread)
     int num_iter = 1; //stores the number of iterations to run default 1. 
-
+    int imp_method = PTHREAD_LOCK; 
+    
     static struct option longopt[] = {
         {"name", no_argument, NULL, 'n'},// --name
         {"o", required_argument, NULL, 'o'}, // output file
@@ -55,7 +57,7 @@ int main(int argc, char* argv[]){
         {"bar", required_argument, NULL, 'b'}, // barrier implementation
         {"lock", required_argument, NULL, 'l'} // barrier implementation
     }; 
-    char * optstr = "no:t:i:b:l:"; 
+    char * optstr = "no:t:i:b:l"; 
 
 
  //Parse the rest of the command line
@@ -83,12 +85,6 @@ int main(int argc, char* argv[]){
                 break; 
         }
     }
-    cout<<"Input arguments:"<<endl; 
-    cout<<"threads = "<<threads<<endl; 
-    cout<<"iterations = "<<iterations<<endl; 
-    cout<<"bar = "<<bar<<endl; 
-    cout<<"lock = "<<lock<<endl; 
-    cout<<"outFile = "<<outFile<<endl; 
 
     //Check options to make sure that they are valid
     if(outFile.rfind(".txt")==string::npos){
@@ -142,24 +138,44 @@ int main(int argc, char* argv[]){
         }
     }
 
-    if(bar.compare("pthread")!= 0 && bar.compare("sense")!= 0){
-        cout<<"An invalid barrier implementation was entered."<<endl; 
-        printUsage();
-        return -4; 
-    }
-
-    if(lock.compare("pthread")!= 0 && lock.compare("tas")!= 0 && lock.compare("ttas")!= 0 && lock.compare("ticket")!= 0){
-        cout<<"An invalid lock implementation was entered."<<endl; 
+    if(!bar.empty() && !lock.empty() || bar.empty() && lock.empty()){
+        cout<<"An invalid barrier and lock implementation combination was entered. Either a barrier implentation or a lock implemation is passed in. \nOnly one implementation is allowed to be entered."<<endl; 
         printUsage();
         return -5; 
+    
+    }
+
+    if(!bar.empty() && bar.compare("pthread")!= 0 && bar.compare("sense")!= 0){
+        cout<<"An invalid barrier implementation was entered."<<endl; 
+        printUsage();
+        return -5; 
+    }else if(!bar.empty() &&bar.compare("pthread")== 0){//set imp_method to PTHREAD_BAR
+        imp_method = PTHREAD_BAR; 
+    }else if(!bar.empty()){ //set imp_method to SENSE_BAR
+        imp_method = SENSE_BAR; 
+    }
+
+    if(!lock.empty() && lock.compare("pthread")!= 0 && lock.compare("tas")!= 0 && lock.compare("ttas")!= 0 && lock.compare("ticket")!= 0){
+        cout<<"An invalid lock implementation was entered."<<endl; 
+        printUsage();
+        return -6; 
+    }else if(!lock.empty() && lock.compare("pthread")== 0){//set imp_method to PTHREAD_BAR
+        imp_method = PTHREAD_LOCK; 
+    }else if(!lock.empty() && lock.compare("tas")== 0){//set imp_method to PTHREAD_BAR
+        imp_method = TAS_LOCK; 
+    }else if(!lock.empty() && lock.compare("ttas")== 0){//set imp_method to PTHREAD_BAR
+        imp_method = TTAS_LOCK; 
+    }else if(!lock.empty()){ //set imp_method to SENSE_BAR
+        imp_method = TICKET_LOCK; 
     }
 
     cout<<"Running counter with "<<num_threads<<" threads, "<<num_iter<<" iterations, '"<<bar<<"' barriers, '"<<lock<<"' locks, and outputting to '"<<outFile<<"'"<<endl; 
     
-    int final_cnt = 100; 
+    int final_cnt = 0; 
     //Call counter here
+    run_threaded_counter(num_threads, num_iter, imp_method, final_cnt); 
 
-
+    cout<<"Final count "<<final_cnt<<endl; 
     // Output sorted data to output file
     ofstream fileOut; 
     fileOut.open(outFile); 
