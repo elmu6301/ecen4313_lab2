@@ -9,4 +9,5 @@ Elena Murray
 5. Known Bugs
 
 ./counter -t 3 -i 2 --lock=pthread -o output.txt
+./counter -t 3 -i 2 --lock=tas -o output.txt
 ./counter -t 3 -i 2 --bar=pthread -o output.txt
