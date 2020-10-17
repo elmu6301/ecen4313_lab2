@@ -1,5 +1,5 @@
 ECEN 4313 Concurrent Programming
-LAB XXX Write Up
+LAB 2 Write Up
 Elena Murray
 
 1. Overview

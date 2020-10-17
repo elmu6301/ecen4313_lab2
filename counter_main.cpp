@@ -7,7 +7,6 @@ Lab 2:
 */
 
 //Library includes
-//Library includes
 #include <fstream>
 #include <iostream>
 #include <stdio.h>

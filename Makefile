@@ -22,8 +22,8 @@ threaded_bucketsort.o: threaded_bucketsort.cpp threaded_bucketsort.hpp
 	g++ -c threaded_bucketsort.cpp 
 
 #Executable for counter
-counter: counter_main.o threaded_counter.o array_splitter.o
-	g++ counter_main.o  threaded_counter.o array_splitter.o -pthread -g -o counter
+counter: counter_main.o threaded_counter.o array_splitter.o tas_lock.o
+	g++ counter_main.o  threaded_counter.o array_splitter.o tas_lock.o -pthread -g -o counter
 
 #Object Files for counter
 counter_main.o: counter_main.cpp
@@ -31,6 +31,11 @@ counter_main.o: counter_main.cpp
 
 threaded_counter.o: threaded_counter.cpp threaded_counter.hpp
 	g++ -c threaded_counter.cpp 
+
+
+#Object Files for Locks
+tas_lock.o: conc_primitives/tas_lock.cpp conc_primitives/tas_lock.hpp
+	g++ -c conc_primitives/tas_lock.cpp
 
 #Clean
 clean:

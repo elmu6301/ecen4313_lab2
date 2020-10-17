@@ -6,35 +6,153 @@
 
 //Developer includes
 #include "threaded_counter.hpp"
+#include "conc_primitives/tas_lock.hpp"
 
+//Global Variables
 size_t* args;
 size_t NUM_THREADS;
 size_t NUM_ITER; 
 size_t IMP_METHOD; 
 int counter;  
+void * (*thread_foo)(void *); 
 
+//Threads
 pthread_t* threads;
+
+//Barriers
 pthread_barrier_t bar;
-pthread_mutex_t lock; 
+
+//Locks
+pthread_mutex_t p_lock; 
+TasLock tas_lock;  
 
 struct timespec start, end;
 
+// void global_init(){
+// 	threads = (pthread_t *)malloc(NUM_THREADS*sizeof(pthread_t));
+// 	args = (size_t*)malloc(NUM_THREADS*sizeof(size_t));
+// 	pthread_barrier_init(&bar, NULL, NUM_THREADS);
+// 	p_lock = PTHREAD_MUTEX_INITIALIZER;
+// 	counter = 0; 
+// }
+
+// void global_cleanup(){
+// 	free(threads);
+// 	free(args);
+// 	pthread_barrier_destroy(&bar);
+// }
+
+void* thread_main(void* args); 
+void* counter_pthread_lock(void* args); 
+void* counter_tas_lock(void* args); 
+void* counter_tas_lock(void* args); 
+void* counter_pthread_bar(void* args); 
+
 void global_init(){
-	threads = (pthread_t *)malloc(NUM_THREADS*sizeof(pthread_t));
+
+	//Variables used in all cases
+	threads = (pthread_t *)malloc(NUM_THREADS*sizeof(pthread_t)); //
 	args = (size_t*)malloc(NUM_THREADS*sizeof(size_t));
-	pthread_barrier_init(&bar, NULL, NUM_THREADS);
-	// lock = new pthread_mutex_t; 
-	lock = PTHREAD_MUTEX_INITIALIZER;
+	pthread_barrier_init(&bar, NULL, NUM_THREADS); //Needed for all the timing analysis
 	counter = 0; 
+
+	printf("\nRunning counter with %ld threads, %ld iterations, and method = ", NUM_THREADS, NUM_ITER); 
+	
+	//Configure global variables based on the input type
+	switch (IMP_METHOD){
+		case SENSE_BAR:
+			/* code */
+			printf("SENSE_BAR\n"); 
+			thread_foo =  &thread_main; 
+			break;
+		case PTHREAD_BAR:
+			/* code */
+			printf("PTHREAD_BAR\n"); 
+			thread_foo = &counter_pthread_bar;
+			break;
+		case TAS_LOCK:
+			/* code */
+			printf("TAS_LOCK\n"); 
+			thread_foo = &counter_tas_lock; 
+			break;
+		case TTAS_LOCK:
+			/* code */
+			printf("TTAS_LOCK\n"); 
+			thread_foo = &thread_main; 
+			break;
+		case TICKET_LOCK:
+			/* code */
+			printf("TICKET_LOCK\n"); 
+			thread_foo = &thread_main; 
+			break;
+		case PTHREAD_LOCK:
+			/* code */
+			printf("PTHREAD_LOCK\n"); 
+			p_lock = PTHREAD_MUTEX_INITIALIZER;
+			thread_foo = &counter_pthread_lock; 
+			break;
+
+		default:
+			break;
+		}
 }
+
+
+
+
+
 void global_cleanup(){
+	//Variables to free everytime
 	free(threads);
 	free(args);
 	pthread_barrier_destroy(&bar);
+	printf("\nCleaning counter with method = "); 
+	
+	//Variables to free based on configuratoin
+	switch (IMP_METHOD){
+		case SENSE_BAR:
+			/* code */
+			printf("SENSE_BAR\n"); 
+			 
+			break;
+		case PTHREAD_BAR:
+			/* code */
+			printf("PTHREAD_BAR\n"); 
+			break;
+		case TAS_LOCK:
+			/* code */
+			printf("TAS_LOCK\n"); 
+			// delete &tas_lock; 
+		
+			break;
+		case TTAS_LOCK:
+			/* code */
+			printf("TTAS_LOCK\n"); 
+
+			break;
+		case TICKET_LOCK:
+			/* code */
+			printf("TICKET_LOCK\n"); 
+			
+			break;
+		case PTHREAD_LOCK:
+			/* code */
+			printf("PTHREAD_LOCK\n"); 
+			break;
+
+		default:
+			break;
+	}
 }
+
+
+
+
 
 void local_init(){}
 void local_cleanup(){}
+
+
 
 void* thread_main(void* args){
 	size_t tid = *((size_t*)args);
@@ -69,9 +187,37 @@ void* counter_pthread_lock(void* args){
 	// do something
 	// printf("counter_pthread_lock: Thread %zu reporting for duty\n",tid);
 	for(int i = 0; i < NUM_ITER; i++){
-		pthread_mutex_lock(&lock); 
+		pthread_mutex_lock(&p_lock); 
 		counter++; 
-		pthread_mutex_unlock(&lock);
+		pthread_mutex_unlock(&p_lock);
+	}
+
+	pthread_barrier_wait(&bar);
+	if(tid==1){
+		clock_gettime(CLOCK_MONOTONIC,&end);
+	}
+	local_cleanup();
+	
+	return 0;
+}
+
+void* counter_tas_lock(void* args){
+	size_t tid = *((size_t*)args);
+	local_init();
+	pthread_barrier_wait(&bar);
+	if(tid==1){
+		clock_gettime(CLOCK_MONOTONIC,&start);
+	}
+	pthread_barrier_wait(&bar);
+	
+	// do something
+	// printf("counter_tas_lock: Thread %zu reporting for duty\n",tid);
+	for(int i = 0; i < NUM_ITER; i++){
+		// pthread_mutex_lock(&p_lock); 
+		tas_lock.lock(); 
+		counter++; 
+		tas_lock.unlock(); 
+		// pthread_mutex_unlock(&p_lock);
 	}
 
 	pthread_barrier_wait(&bar);
@@ -120,48 +266,50 @@ int run_threaded_counter(int num_threads, int num_iter, int imp_method, int & fi
 	NUM_THREADS = num_threads;
 	NUM_ITER = num_iter; 
 	IMP_METHOD = imp_method; 
-
-	printf("\nRunning counter with %ld threads, %ld iterations, and method = ", NUM_THREADS, NUM_ITER); 
 	
-	//Determine which version of counter to run
-	void * (*foo)(void *); 
-	
-	switch (IMP_METHOD)
-	{
-	case SENSE_BAR:
-		/* code */
-		printf("SENSE_BAR\n"); 
-		foo =  &thread_main; 
-		break;
-	case PTHREAD_BAR:
-		/* code */
-		printf("PTHREAD_BAR\n"); 
-		foo = &counter_pthread_bar;
-		break;
-	case TAS_LOCK:
-		/* code */
-		printf("TAS_LOCK\n"); 
-		foo = &thread_main; 
-		break;
-	case TTAS_LOCK:
-		/* code */
-		printf("TTAS_LOCK\n"); 
-		foo = &thread_main; 
-		break;
-	case TICKET_LOCK:
-		/* code */
-		printf("TICKET_LOCK\n"); 
-		foo = &thread_main; 
-		break;
-	case PTHREAD_LOCK:
-		/* code */
-		printf("PTHREAD_LOCK\n"); 
-		foo = &counter_pthread_lock; 
-		break;
 
-	default:
-		break;
-	}
+	// printf("\nRunning counter with %ld threads, %ld iterations, and method = ", NUM_THREADS, NUM_ITER); 
+	
+	// //Determine which version of counter to run
+	// void * (*foo)(void *); 
+	
+	
+	// switch (IMP_METHOD)
+	// {
+	// case SENSE_BAR:
+	// 	/* code */
+	// 	printf("SENSE_BAR\n"); 
+	// 	foo =  &thread_main; 
+	// 	break;
+	// case PTHREAD_BAR:
+	// 	/* code */
+	// 	printf("PTHREAD_BAR\n"); 
+	// 	foo = &counter_pthread_bar;
+	// 	break;
+	// case TAS_LOCK:
+	// 	/* code */
+	// 	printf("TAS_LOCK\n"); 
+	// 	foo = &counter_tas_lock; 
+	// 	break;
+	// case TTAS_LOCK:
+	// 	/* code */
+	// 	printf("TTAS_LOCK\n"); 
+	// 	foo = &thread_main; 
+	// 	break;
+	// case TICKET_LOCK:
+	// 	/* code */
+	// 	printf("TICKET_LOCK\n"); 
+	// 	foo = &thread_main; 
+	// 	break;
+	// case PTHREAD_LOCK:
+	// 	/* code */
+	// 	printf("PTHREAD_LOCK\n"); 
+	// 	foo = &counter_pthread_lock; 
+	// 	break;
+
+	// default:
+	// 	break;
+	// }
 
 	global_init();
 	
@@ -171,7 +319,7 @@ int run_threaded_counter(int num_threads, int num_iter, int imp_method, int & fi
   	for(i=1; i<NUM_THREADS; i++){
 		args[i]=i+1;
 		printf("creating thread %zu\n",args[i]);
-		ret = pthread_create(&threads[i], NULL, foo, &args[i]);
+		ret = pthread_create(&threads[i], NULL, thread_foo, &args[i]);
 		if(ret){
 			printf("ERROR; pthread_create: %d\n", ret);
 			exit(-1);
@@ -179,7 +327,7 @@ int run_threaded_counter(int num_threads, int num_iter, int imp_method, int & fi
 	}
 	i = 1;
 
-	(*foo)(&i); // master also calls thread_main
+	(*thread_foo)(&i); // master also calls thread_main
 	// join threads
 	for(size_t i=1; i<NUM_THREADS; i++){
 		ret = pthread_join(threads[i],NULL);

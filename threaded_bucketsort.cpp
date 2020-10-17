@@ -2,7 +2,7 @@
 ECEN 4313: Concurrent Programming
 Author: Elena Murray
 Date: 9/30/2020
-Lab 1: 
+Lab 2: 
 
 *Note modified from test.c provide
     
