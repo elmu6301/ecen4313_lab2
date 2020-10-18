@@ -26,6 +26,7 @@ pthread_t *threads;
 size_t NUM_THREADS;
 size_t NUM_BUCKETS; 
 size_t IMP_METHOD; 
+
 void * (*thread_foo)(void *); 
 
 //Barriers
@@ -39,7 +40,7 @@ struct timespec start;
 struct timespec end;
 
 void *bucketsort_thread(void *args); 
-void *bucketsort_thread_s_bar(void *args); 
+void *bucketsort_p_lock_s_bar(void *args); 
 
 
 /*
@@ -55,23 +56,43 @@ void global_init()
 	}
 	pthread_barrier_init(&p_bar, NULL, NUM_THREADS);
 	printf("\nRunning threaded_bucketsort with %ld threads and method = ", NUM_THREADS); 
-	
+
 	switch (IMP_METHOD){
-		case TAS_LOCK:
-			printf("TAS_LOCK\n"); 
+		case TAS_LOCK_PTHREAD_BAR:
+			printf("TAS_LOCK_PTHREAD_BAR\n"); 
 			thread_foo = &bucketsort_thread; 
 			break;
-		case TTAS_LOCK:
-			printf("TTAS_LOCK\n"); 
+		case TTAS_LOCK_PTHREAD_BAR:
+			printf("TTAS_LOCK_PTHREAD_BAR\n"); 
 			thread_foo = &bucketsort_thread;   
 			break;
-		case TICKET_LOCK:
-			printf("TICKET_LOCK\n"); 
+		case TICKET_LOCK_PTHREAD_BAR:
+			printf("TICKET_LOCK_PTHREAD_BAR\n"); 
 			thread_foo = &bucketsort_thread; 
 			break;
-		case PTHREAD_LOCK:
-			printf("PTHREAD_LOCK\n"); 
+		case PTHREAD_LOCK_PTHREAD_BAR:
+			printf("PTHREAD_LOCK_PTHREAD_BAR\n"); 
 			thread_foo = &bucketsort_thread; 
+			break;
+		case TAS_LOCK_SENSE_BAR:
+			printf("TAS_LOCK_SENSE_BAR\n"); 
+			s_bar.init(NUM_THREADS); 
+			thread_foo = &bucketsort_thread; 
+			break;
+		case TTAS_LOCK_SENSE_BAR:
+			printf("TTAS_LOCK_SENSE_BAR\n"); 
+			s_bar.init(NUM_THREADS); 
+			thread_foo = &bucketsort_thread;   
+			break;
+		case TICKET_LOCK_SENSE_BAR:
+			printf("TICKET_LOCK_SENSE_BAR\n"); 
+			s_bar.init(NUM_THREADS); 
+			thread_foo = &bucketsort_thread; 
+			break;
+		case PTHREAD_LOCK_SENSE_BAR:
+			printf("PTHREAD_LOCK_SENSE_BAR\n"); 
+			s_bar.init(NUM_THREADS); 
+			thread_foo = &bucketsort_p_lock_s_bar;  
 			break;
 
 		default:
@@ -88,31 +109,6 @@ void global_cleanup()
 	free(threads);
 	delete p_locks; 
 	pthread_barrier_destroy(&p_bar);
-}
-
-
-/*
-	Allocates all required data. 
-*/
-void global_init_s_bar()
-{
-	threads = (pthread_t *)malloc(NUM_THREADS * sizeof(pthread_t));
-	p_locks = new pthread_mutex_t[NUM_BUCKETS]; 
-	//inialize each lock 
-	for(int i = 0; i < NUM_BUCKETS; i++){
-		p_locks[i] = PTHREAD_MUTEX_INITIALIZER; 
-	}
-	s_bar.init(NUM_THREADS);
-
-}
-
-/*
-	Frees all allocated data. 
-*/
-void global_cleanup_s_bar()
-{
-	free(threads);
-	delete p_locks; 
 }
 
 /*
@@ -193,7 +189,7 @@ void *bucketsort_thread(void *args)
 	return 0;
 }
 
-void *bucketsort_thread_s_bar(void *args)
+void *bucketsort_p_lock_s_bar(void *args)
 {
 	size_t tid = ((struct threaded_bucketsort_args *)args)->tid; //*((size_t*)args);
 	std::vector<int> array = ((struct threaded_bucketsort_args *)args)->array;
@@ -304,84 +300,3 @@ int run_threaded_bucketsort(int num_threads, int imp_method, std::vector <int> &
 }
 
 
-/*
-	Runs the parallelized bucketsort. Creates and joins all threads and returns
-	the data to main. 
-*/
-int run_threaded_bucketsort_s_bar(int num_threads, std::vector <int> &data)
-{
-	printf("\nRunning run_threaded_bucketsort_s_bar"); 
-	NUM_THREADS = num_threads;
-	if (NUM_THREADS > 150) 
-	{
-		printf("ERROR; too many threads\n");
-		exit(-1);
-	}
-	//Calcualte how many buckets are required
-	NUM_BUCKETS = calc_num_buckets(data, NUM_THREADS); 
-
-	//Create buckets
-	std::list<int> buckets[NUM_BUCKETS]; 
-	//Global init
-	global_init_s_bar();
-
-	//Split array into NUM_THREADS parts
-	std::vector<std::vector<int>> split_arrays = split_vector_array(data, NUM_THREADS);
-
-	//Find the maximum value of the array
-	int MAX_VALUE = calc_max(data);
-	
-	struct threaded_bucketsort_args args[NUM_THREADS];
-	
-	//Setting up the master thread args data
-	args[0].tid = 1; //i;
-	args[0].array = split_arrays[0];
-	args[0].buckets = buckets; 
-	args[0].max = MAX_VALUE; 
-
-
-	// // launch threads
-	int ret;
-	size_t i;
-
-	for (i = 1; i < NUM_THREADS; i++)
-	{
-		args[i].tid = i + 1;
-		args[i].array = split_arrays[i];
-		args[i].buckets = buckets; 
-		args[i].max = MAX_VALUE; 
-		// printf("creating thread %zu\n",args[i].tid);
-		ret = pthread_create(&threads[i], NULL, &bucketsort_thread_s_bar, &args[i]);
-		if (ret)
-		{
-			printf("ERROR; pthread_create: %d\n", ret);
-			exit(-1);
-		}
-	}
-
-	bucketsort_thread_s_bar(&args); // master also calls mergesort_thread
-
-	// join threads
-	for (size_t i = 1; i < NUM_THREADS; i++)
-	{
-		ret = pthread_join(threads[i], NULL);
-		if (ret)
-		{
-			printf("ERROR; pthread_join: %d\n", ret);
-			exit(-1);
-		}
-		// printf("joined thread %zu\n",i+1);
-	}
-
-	//Concatenate all buckets
-	data  = concatenate(buckets, NUM_BUCKETS); 
-
-	global_cleanup_s_bar();
-
-	unsigned long long elapsed_ns;
-	elapsed_ns = (end.tv_sec - start.tv_sec) * 1000000000 + (end.tv_nsec - start.tv_nsec);
-	printf("Elapsed (ns): %llu\n", elapsed_ns);
-	double elapsed_s = ((double)elapsed_ns) / 1000000000.0;
-	printf("Elapsed (s): %lf\n", elapsed_s);
-	return 0; 
-}

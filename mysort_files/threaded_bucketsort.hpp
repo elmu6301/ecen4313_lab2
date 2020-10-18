@@ -19,16 +19,20 @@ struct threaded_bucketsort_args {
 
 //Enumerations to detetermine the type of primitives to use
 enum mysort_imp{
-    SENSE_BAR, 
-    PTHREAD_BAR,
-    TAS_LOCK,
-    TTAS_LOCK,
-    TICKET_LOCK,
-    PTHREAD_LOCK
-
+    //Lock with sense barrier for timing
+    TAS_LOCK_SENSE_BAR,
+    TTAS_LOCK_SENSE_BAR,
+    TICKET_LOCK_SENSE_BAR,
+    PTHREAD_LOCK_SENSE_BAR,
+    SENSE_BAR_SENSE_BAR,
+    //Lock with pthread barrier for timing
+    TAS_LOCK_PTHREAD_BAR, 
+    TTAS_LOCK_PTHREAD_BAR, 
+    TICKET_LOCK_PTHREAD_BAR, 
+    PTHREAD_LOCK_PTHREAD_BAR, 
+    SENSE_BAR_PTHREAD_BAR
 }; 
 
 int run_threaded_bucketsort(int num_threads, int imp_method, std::vector <int> &data ); 
-int run_threaded_bucketsort_s_bar(int num_threads,std::vector <int> &data ); 
 
 #endif

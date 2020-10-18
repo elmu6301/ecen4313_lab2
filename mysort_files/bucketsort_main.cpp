@@ -45,8 +45,7 @@ int main(int argc, char* argv[]){
     string lock; 
     char opt; //stores the option value
     int num_threads = 1; //stores the number of threads to create, set to default of 1 thread (i.e. master thread)
-    int imp_lock_method = PTHREAD_LOCK; 
-    //  int imp_lock_method = PTHREAD_LOCK; 
+    int imp_method = PTHREAD_LOCK_PTHREAD_BAR; 
    
     static struct option longopt[] = {
         {"name", no_argument, NULL, 'n'},// --name
@@ -107,24 +106,37 @@ int main(int argc, char* argv[]){
         return -3; 
     }
 
-    if(bar.compare("pthread")!= 0 && bar.compare("sense")!= 0){
-        cout<<"An invalid barrier implementation was entered."<<endl; 
-        printUsage();
-        return -4; 
-    }
 
     if(lock.compare("pthread")!= 0 && lock.compare("tas")!= 0 && lock.compare("ttas")!= 0 && lock.compare("ticket")!= 0){
         cout<<"An invalid lock implementation was entered."<<endl; 
         printUsage();
         return -5; 
-    }else if(lock.compare("pthread")==0){
-        imp_lock_method = PTHREAD_LOCK; 
-    }else if(lock.compare("tas")==0){
-        imp_lock_method = TAS_LOCK; 
-    }else if(lock.compare("ttas")==0){
-        imp_lock_method = TTAS_LOCK; 
-    }else if(lock.compare("ticket")==0){
-        imp_lock_method = TICKET_LOCK; 
+    }
+
+    if(bar.compare("pthread")!= 0 && bar.compare("sense")!= 0){
+        cout<<"An invalid barrier implementation was entered."<<endl; 
+        printUsage();
+        return -4; 
+    }else if(bar.compare("pthread")== 0){
+        if(lock.compare("pthread")==0){
+            imp_method = PTHREAD_LOCK_PTHREAD_BAR; 
+        }else if(lock.compare("tas")==0){
+            imp_method = TAS_LOCK_PTHREAD_BAR; 
+        }else if(lock.compare("ttas")==0){
+            imp_method = TTAS_LOCK_PTHREAD_BAR; 
+        }else if(lock.compare("ticket")==0){
+            imp_method = TICKET_LOCK_PTHREAD_BAR; 
+        }
+    }else{
+        if(lock.compare("pthread")==0){
+            imp_method = PTHREAD_LOCK_SENSE_BAR; 
+        }else if(lock.compare("tas")==0){
+            imp_method = TAS_LOCK_SENSE_BAR; 
+        }else if(lock.compare("ttas")==0){
+            imp_method = TTAS_LOCK_SENSE_BAR; 
+        }else if(lock.compare("ticket")==0){
+            imp_method = TICKET_LOCK_SENSE_BAR; 
+        }
     }
   
     //Convert threads to an integer
@@ -181,16 +193,7 @@ int main(int argc, char* argv[]){
     }
 
     cout<<"Running counter with "<<num_threads<<" threads, '"<<bar<<"' barriers, '"<<lock<<"' locks, input file '"<<srcFile<<"', and outputting to '"<<outFile<<"'"<<endl; 
-   
-    if(bar.compare("pthread")==0){
-        //mergeSort(data);  
-        cout<<"Running bucket sort with pthread barriers"<<endl; 
-        run_threaded_bucketsort(num_threads, imp_lock_method, data); 
-    }
-    // else if(bar.compare("sense")==0){
-    //      cout<<"Running bucket sort with sense barriers"<<endl; 
-    //     run_threaded_bucketsort_s_bar(num_threads, data); 
-    // }
+    run_threaded_bucketsort(num_threads, imp_method, data); 
 
     // Output sorted data to output file
     ofstream fileOut; 
