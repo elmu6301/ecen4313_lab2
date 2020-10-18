@@ -8,8 +8,8 @@
 all: mysort counter 
 
 #Executable for mysort
-mysort: bucketsort_main.o threaded_bucketsort.o array_splitter.o sense_barrier.o
-	g++ bucketsort_main.o threaded_bucketsort.o array_splitter.o sense_barrier.o -pthread -g -o mysort
+mysort: bucketsort_main.o threaded_bucketsort.o array_splitter.o sense_barrier.o tas_lock.o ttas_lock.o ticket_lock.o
+	g++ bucketsort_main.o threaded_bucketsort.o array_splitter.o sense_barrier.o tas_lock.o ttas_lock.o ticket_lock.o -pthread -g -o mysort
 
 #Object Files for mysort
 bucketsort_main.o: mysort_files/bucketsort_main.cpp

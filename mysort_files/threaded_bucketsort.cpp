@@ -19,6 +19,9 @@ Lab 2:
 //Developer includes
 #include "threaded_bucketsort.hpp"
 #include "array_splitter.hpp"
+#include "../conc_primitives/tas_lock.hpp"
+#include "../conc_primitives/ttas_lock.hpp"
+#include "../conc_primitives/ticket_lock.hpp"
 #include "../conc_primitives/sense_barrier.hpp"
 
 //Global Variables
@@ -35,13 +38,23 @@ SenseBarrier s_bar;
 
 //Locks
 pthread_mutex_t * p_locks; 
+TasLock * tas_locks;
+TtasLock * ttas_locks;
+TicketLock * ticket_locks; 
+
 
 struct timespec start;
 struct timespec end;
 
-void *bucketsort_thread(void *args); 
-void *bucketsort_p_lock_s_bar(void *args); 
+void *bucketsort_p_lock_p_bar(void *args); 
+void *bucketsort_tas_p_bar(void *args); 
+void *bucketsort_ttas_p_bar(void *args); 
+void *bucketsort_ticket_p_bar(void *args); 
 
+void *bucketsort_p_lock_s_bar(void *args); 
+void *bucketsort_tas_s_bar(void *args); 
+void *bucketsort_ttas_s_bar(void *args); 
+void *bucketsort_ticket_s_bar(void *args); 
 
 /*
 	Allocates all required data. 
@@ -49,53 +62,99 @@ void *bucketsort_p_lock_s_bar(void *args);
 void global_init()
 {
 	threads = (pthread_t *)malloc(NUM_THREADS * sizeof(pthread_t));
-	p_locks = new pthread_mutex_t[NUM_BUCKETS]; 
-	//inialize each lock 
-	for(int i = 0; i < NUM_BUCKETS; i++){
-		p_locks[i] = PTHREAD_MUTEX_INITIALIZER; 
-	}
-	pthread_barrier_init(&p_bar, NULL, NUM_THREADS);
+	
+	
 	printf("\nRunning threaded_bucketsort with %ld threads and method = ", NUM_THREADS); 
 
 	switch (IMP_METHOD){
 		case TAS_LOCK_PTHREAD_BAR:
-			printf("TAS_LOCK_PTHREAD_BAR\n"); 
-			thread_foo = &bucketsort_thread; 
+			printf("TAS_LOCK_PTHREAD_BAR\n");
+			//Set to the right function 
+			thread_foo = &bucketsort_tas_p_bar;   
+			//Inialize tas_locks 
+			tas_locks = new TasLock[NUM_BUCKETS]; 
+			//Init pthread barrier
+			pthread_barrier_init(&p_bar, NULL, NUM_THREADS);
 			break;
 		case TTAS_LOCK_PTHREAD_BAR:
-			printf("TTAS_LOCK_PTHREAD_BAR\n"); 
-			thread_foo = &bucketsort_thread;   
+			printf("TTAS_LOCK_PTHREAD_BAR\n");
+			//Set to the right function 
+			thread_foo = &bucketsort_ttas_p_bar; 
+			//Inialize ttas_locks
+			ttas_locks = new TtasLock[NUM_BUCKETS]; 
+			//Init pthread barrier
+			pthread_barrier_init(&p_bar, NULL, NUM_THREADS);
 			break;
 		case TICKET_LOCK_PTHREAD_BAR:
-			printf("TICKET_LOCK_PTHREAD_BAR\n"); 
-			thread_foo = &bucketsort_thread; 
+			printf("TICKET_LOCK_PTHREAD_BAR\n");
+			//Set to the right function 
+			thread_foo = &bucketsort_ticket_p_bar; 
+			//Inialize ticket_locks 
+			ticket_locks = new TicketLock[NUM_BUCKETS]; 
+			//Init pthread barrier
+			pthread_barrier_init(&p_bar, NULL, NUM_THREADS);
 			break;
 		case PTHREAD_LOCK_PTHREAD_BAR:
 			printf("PTHREAD_LOCK_PTHREAD_BAR\n"); 
-			thread_foo = &bucketsort_thread; 
+			//Set to the right function 
+			thread_foo = &bucketsort_p_lock_p_bar; 
+			//Inialize p_locks
+			p_locks = new pthread_mutex_t[NUM_BUCKETS]; 
+			for(int i = 0; i < NUM_BUCKETS; i++){
+				p_locks[i] = PTHREAD_MUTEX_INITIALIZER; 
+			}
+			//Init pthread barrier
+			pthread_barrier_init(&p_bar, NULL, NUM_THREADS);
 			break;
 		case TAS_LOCK_SENSE_BAR:
 			printf("TAS_LOCK_SENSE_BAR\n"); 
+			//Set to the right function 
+			thread_foo = &bucketsort_tas_s_bar; 
+			//Inialize tas_locks
+			tas_locks = new TasLock[NUM_BUCKETS]; 
+			//Init sense barrier barrier
 			s_bar.init(NUM_THREADS); 
-			thread_foo = &bucketsort_thread; 
 			break;
 		case TTAS_LOCK_SENSE_BAR:
 			printf("TTAS_LOCK_SENSE_BAR\n"); 
+			//Set to the right function 
+			thread_foo = &bucketsort_ttas_s_bar; 
+			//Inialize each pthread lock 
+			ttas_locks = new TtasLock[NUM_BUCKETS]; 
+			//Init sense barrier barrier
 			s_bar.init(NUM_THREADS); 
-			thread_foo = &bucketsort_thread;   
 			break;
 		case TICKET_LOCK_SENSE_BAR:
 			printf("TICKET_LOCK_SENSE_BAR\n"); 
+			//Set to the right function 
+			thread_foo = &bucketsort_ticket_s_bar; 
+			//Inialize each pthread lock 
+			ticket_locks = new TicketLock[NUM_BUCKETS]; 
+			//Init sense barrier barrier
 			s_bar.init(NUM_THREADS); 
-			thread_foo = &bucketsort_thread; 
 			break;
 		case PTHREAD_LOCK_SENSE_BAR:
 			printf("PTHREAD_LOCK_SENSE_BAR\n"); 
-			s_bar.init(NUM_THREADS); 
+			//Set to the right function 
 			thread_foo = &bucketsort_p_lock_s_bar;  
-			break;
+			//Inialize each pthread lock 
+			p_locks = new pthread_mutex_t[NUM_BUCKETS]; 
+			for(int i = 0; i < NUM_BUCKETS; i++){
+				p_locks[i] = PTHREAD_MUTEX_INITIALIZER; 
+			}
+			//Init sense barrier barrier
+			s_bar.init(NUM_THREADS); 
 
 		default:
+			//Set to the default function
+			thread_foo = &bucketsort_p_lock_p_bar; 
+			//Inialize each pthread lock 
+			p_locks = new pthread_mutex_t[NUM_BUCKETS]; 
+			for(int i = 0; i < NUM_BUCKETS; i++){
+				p_locks[i] = PTHREAD_MUTEX_INITIALIZER; 
+			}
+			//Init pthread barrier
+			pthread_barrier_init(&p_bar, NULL, NUM_THREADS);
 			break;
 		}
 
@@ -107,26 +166,54 @@ void global_init()
 void global_cleanup()
 {
 	free(threads);
-	delete p_locks; 
-	pthread_barrier_destroy(&p_bar);
+	 
+	
+	printf("\nCleaning counter with method = "); 
+	
+	switch (IMP_METHOD){
+		case TAS_LOCK_PTHREAD_BAR:
+			printf("TAS_LOCK_PTHREAD_BAR\n"); 
+			pthread_barrier_destroy(&p_bar);
+			delete tas_locks;
+			break;
+		case TTAS_LOCK_PTHREAD_BAR:
+			printf("TTAS_LOCK_PTHREAD_BAR\n"); 
+			pthread_barrier_destroy(&p_bar);
+			delete ttas_locks;
+			break;
+		case TICKET_LOCK_PTHREAD_BAR:
+			printf("TICKET_LOCK_PTHREAD_BAR\n"); 
+			pthread_barrier_destroy(&p_bar);
+			delete ticket_locks;
+			break;
+		case PTHREAD_LOCK_PTHREAD_BAR:
+			printf("PTHREAD_LOCK_PTHREAD_BAR\n"); 
+			delete p_locks;
+			pthread_barrier_destroy(&p_bar);
+			break;
+		case TAS_LOCK_SENSE_BAR:
+			printf("TAS_LOCK_SENSE_BAR\n"); 
+			delete tas_locks;
+			break;
+		case TTAS_LOCK_SENSE_BAR:
+			printf("TTAS_LOCK_SENSE_BAR\n"); 
+			delete ttas_locks;
+			break;
+		case TICKET_LOCK_SENSE_BAR:
+			printf("TICKET_LOCK_SENSE_BAR\n"); 
+			delete ticket_locks;
+			break;
+		case PTHREAD_LOCK_SENSE_BAR:
+			printf("PTHREAD_LOCK_SENSE_BAR\n"); 
+			break;
+
+		default:
+			pthread_barrier_destroy(&p_bar);
+			delete p_locks;
+			break;
+		}
 }
 
-/*
-	Bucketsort algo with locks to protect each index. 
-*/
-void bucketsort(std::vector<int> array, int max,std::list<int> * buckets ){
-	int b;  
-	for(int i = 0; i < array.size(); i++){ 
-		b = floor(NUM_BUCKETS * (double)array[i]/max); 
-		//protect bucket number b
-		pthread_mutex_lock(&p_locks[b]); 
- 
-		// //Add to list
-		buckets[b].push_back(array[i]); 
-		
-		pthread_mutex_unlock(&p_locks[b]);
-	}
-}
 
 std::vector<int> concatenate(std::list<int> * buckets, int num_buckets){
 	std::vector<int> data; 
@@ -163,7 +250,7 @@ void printBuckets(std::list<int> * buckets, int num_buckets){
 /*
 	Thread version of bucketsort. Runs bucketsort with the assigned data. 
 */
-void *bucketsort_thread(void *args)
+void *bucketsort_p_lock_p_bar(void *args)
 {
 	size_t tid = ((struct threaded_bucketsort_args *)args)->tid; //*((size_t*)args);
 	std::vector<int> array = ((struct threaded_bucketsort_args *)args)->array;
@@ -177,7 +264,122 @@ void *bucketsort_thread(void *args)
 	}
 	pthread_barrier_wait(&p_bar);
 
-	bucketsort(array, max, buckets); 
+	int b;  
+	for(int i = 0; i < array.size(); i++){ 
+		b = floor(NUM_BUCKETS * (double)array[i]/max); 
+		//protect bucket number b
+		pthread_mutex_lock(&p_locks[b]); 
+ 
+		// //Add to list
+		buckets[b].push_back(array[i]); 
+		
+		pthread_mutex_unlock(&p_locks[b]);
+	}
+	
+
+	pthread_barrier_wait(&p_bar);
+	if (tid == 1)
+	{
+		clock_gettime(CLOCK_MONOTONIC, &end);
+	}
+
+	return 0;
+}
+
+/*
+	Thread version of bucketsort. Runs bucketsort with the assigned data. 
+*/
+void *bucketsort_tas_p_bar(void *args)
+{
+	size_t tid = ((struct threaded_bucketsort_args *)args)->tid; //*((size_t*)args);
+	std::vector<int> array = ((struct threaded_bucketsort_args *)args)->array;
+	std::list<int> * buckets = ((struct threaded_bucketsort_args *)args)->buckets;
+	int max = ((struct threaded_bucketsort_args *)args)->max; 
+	
+	pthread_barrier_wait(&p_bar);
+	if (tid == 1)
+	{
+		clock_gettime(CLOCK_MONOTONIC, &start);
+	}
+	pthread_barrier_wait(&p_bar);
+
+	int b;  
+	for(int i = 0; i < array.size(); i++){ 
+		b = floor(NUM_BUCKETS * (double)array[i]/max); 
+		//protect bucket number b
+		tas_locks[b].lock(); 
+		//Add to list
+		buckets[b].push_back(array[i]); 
+		tas_locks[b].unlock(); 
+	}
+	
+
+	pthread_barrier_wait(&p_bar);
+	if (tid == 1)
+	{
+		clock_gettime(CLOCK_MONOTONIC, &end);
+	}
+
+	return 0;
+}
+
+void *bucketsort_ttas_p_bar(void *args)
+{
+	size_t tid = ((struct threaded_bucketsort_args *)args)->tid; //*((size_t*)args);
+	std::vector<int> array = ((struct threaded_bucketsort_args *)args)->array;
+	std::list<int> * buckets = ((struct threaded_bucketsort_args *)args)->buckets;
+	int max = ((struct threaded_bucketsort_args *)args)->max; 
+	
+	pthread_barrier_wait(&p_bar);
+	if (tid == 1)
+	{
+		clock_gettime(CLOCK_MONOTONIC, &start);
+	}
+	pthread_barrier_wait(&p_bar);
+
+	int b;  
+	for(int i = 0; i < array.size(); i++){ 
+		b = floor(NUM_BUCKETS * (double)array[i]/max); 
+		//protect bucket number b
+		ttas_locks[b].lock(); 
+		//Add to list
+		buckets[b].push_back(array[i]); 
+		ttas_locks[b].unlock(); 
+	}
+	
+
+	pthread_barrier_wait(&p_bar);
+	if (tid == 1)
+	{
+		clock_gettime(CLOCK_MONOTONIC, &end);
+	}
+
+	return 0;
+}
+
+void *bucketsort_ticket_p_bar(void *args)
+{
+	size_t tid = ((struct threaded_bucketsort_args *)args)->tid; //*((size_t*)args);
+	std::vector<int> array = ((struct threaded_bucketsort_args *)args)->array;
+	std::list<int> * buckets = ((struct threaded_bucketsort_args *)args)->buckets;
+	int max = ((struct threaded_bucketsort_args *)args)->max; 
+	
+	pthread_barrier_wait(&p_bar);
+	if (tid == 1)
+	{
+		clock_gettime(CLOCK_MONOTONIC, &start);
+	}
+	pthread_barrier_wait(&p_bar);
+
+	int b;  
+	for(int i = 0; i < array.size(); i++){ 
+		b = floor(NUM_BUCKETS * (double)array[i]/max); 
+		//protect bucket number b
+		ticket_locks[b].lock(); 
+		//Add to list
+		buckets[b].push_back(array[i]); 
+		ticket_locks[b].unlock(); 
+	}
 	
 
 	pthread_barrier_wait(&p_bar);
@@ -205,7 +407,17 @@ void *bucketsort_p_lock_s_bar(void *args)
 	// pthread_barrier_wait(&p_bar);
 	s_bar.wait(); 
 
-	bucketsort(array, max, buckets); 
+	int b;  
+	for(int i = 0; i < array.size(); i++){ 
+		b = floor(NUM_BUCKETS * (double)array[i]/max); 
+		//protect bucket number b
+		pthread_mutex_lock(&p_locks[b]); 
+ 
+		// //Add to list
+		buckets[b].push_back(array[i]); 
+		
+		pthread_mutex_unlock(&p_locks[b]);
+	}
 	
 	s_bar.wait(); 
 	// pthread_barrier_wait(&p_bar);
@@ -216,6 +428,118 @@ void *bucketsort_p_lock_s_bar(void *args)
 
 	return 0;
 }
+
+void *bucketsort_tas_s_bar(void *args)
+{
+	size_t tid = ((struct threaded_bucketsort_args *)args)->tid; //*((size_t*)args);
+	std::vector<int> array = ((struct threaded_bucketsort_args *)args)->array;
+	std::list<int> * buckets = ((struct threaded_bucketsort_args *)args)->buckets;
+	int max = ((struct threaded_bucketsort_args *)args)->max; 
+	
+	// pthread_barrier_wait(&p_bar);
+	s_bar.wait(); 
+	if (tid == 1)
+	{
+		clock_gettime(CLOCK_MONOTONIC, &start);
+	}
+	s_bar.wait(); 
+
+	int b;  
+	for(int i = 0; i < array.size(); i++){ 
+		b = floor(NUM_BUCKETS * (double)array[i]/max); 
+		//protect bucket number b
+		tas_locks[b].lock(); 
+		//Add to list
+		buckets[b].push_back(array[i]); 
+		tas_locks[b].unlock();  
+	}
+	
+	s_bar.wait(); 
+	if (tid == 1)
+	{
+		clock_gettime(CLOCK_MONOTONIC, &end);
+	}
+
+	return 0;
+}
+
+void *bucketsort_ttas_s_bar(void *args)
+{
+	size_t tid = ((struct threaded_bucketsort_args *)args)->tid; //*((size_t*)args);
+	std::vector<int> array = ((struct threaded_bucketsort_args *)args)->array;
+	std::list<int> * buckets = ((struct threaded_bucketsort_args *)args)->buckets;
+	int max = ((struct threaded_bucketsort_args *)args)->max; 
+	
+	// pthread_barrier_wait(&p_bar);
+	s_bar.wait(); 
+	if (tid == 1)
+	{
+		clock_gettime(CLOCK_MONOTONIC, &start);
+	}
+	s_bar.wait(); 
+
+	int b;  
+	for(int i = 0; i < array.size(); i++){ 
+		b = floor(NUM_BUCKETS * (double)array[i]/max); 
+		//protect bucket number b
+		ttas_locks[b].lock(); 
+		//Add to list
+		buckets[b].push_back(array[i]); 
+		ttas_locks[b].unlock();  
+	}
+	
+	s_bar.wait(); 
+	if (tid == 1)
+	{
+		clock_gettime(CLOCK_MONOTONIC, &end);
+	}
+
+	return 0;
+}
+
+void *bucketsort_ticket_s_bar(void *args)
+{
+	size_t tid = ((struct threaded_bucketsort_args *)args)->tid; //*((size_t*)args);
+	std::vector<int> array = ((struct threaded_bucketsort_args *)args)->array;
+	std::list<int> * buckets = ((struct threaded_bucketsort_args *)args)->buckets;
+	int max = ((struct threaded_bucketsort_args *)args)->max; 
+	
+	// pthread_barrier_wait(&p_bar);
+	s_bar.wait(); 
+	if (tid == 1)
+	{
+		clock_gettime(CLOCK_MONOTONIC, &start);
+	}
+	s_bar.wait(); 
+
+	int b;  
+	for(int i = 0; i < array.size(); i++){ 
+		b = floor(NUM_BUCKETS * (double)array[i]/max); 
+		//protect bucket number b
+		ticket_locks[b].lock(); 
+		//Add to list
+		buckets[b].push_back(array[i]); 
+		ticket_locks[b].unlock();  
+	}
+	
+	s_bar.wait(); 
+	if (tid == 1)
+	{
+		clock_gettime(CLOCK_MONOTONIC, &end);
+	}
+
+	return 0;
+}
+
+
+
+
+
+
+
+
+
+
 
 /*
 	Runs the parallelized bucketsort. Creates and joins all threads and returns
