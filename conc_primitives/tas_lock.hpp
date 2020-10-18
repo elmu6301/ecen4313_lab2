@@ -12,8 +12,9 @@ Lab 2:
 
 class TasLock{
     private: 
-    std::atomic_flag flag = ATOMIC_FLAG_INIT; 
-    
+    // std::atomic_flag flag = ATOMIC_FLAG_INIT; 
+    std::atomic<bool> flag;
+
     public: 
     TasLock(); 
     void myTAS();

@@ -27,13 +27,16 @@ void test_sense_bar(){
 /*
     Constructor
 */
-
 void SenseBarrier::init(int NUM_THREADS){
     cnt.store(0); 
     sense.store(false); 
     N = NUM_THREADS; 
 }
 
+
+/*
+    Constructor
+*/
 void SenseBarrier::wait(){
     thread_local bool my_sense = false; 
     //Flip sense

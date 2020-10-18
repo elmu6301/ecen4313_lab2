@@ -10,7 +10,6 @@ Lab 2:
 #include <stdio.h>
 #include <iostream>
 #include <stdlib.h>
-#include <unistd.h>
 #include <atomic>
 
 using namespace std; 
@@ -28,18 +27,19 @@ void test_ttas_lock(){
     Constructor
 */
 TtasLock::TtasLock(){
-   flag.clear(); 
+    flag.store(false); 
 }
 
 void TtasLock::myTtAS(){
-    bool res = flag.test_and_set(); 
+    bool res = flag.load(); 
     printf(res ? "true": "false"); 
 }
 
 void TtasLock::lock(){
-    // while(flag.atomic_load() ||flag.test_and_set() == false); 
+    while(flag.load() == true || flag.exchange(true) == true); 
+
 }
 
 void TtasLock::unlock(){
-    // flag.clear(); 
+    flag.store(false); 
 }

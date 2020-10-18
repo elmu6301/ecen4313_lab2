@@ -8,29 +8,29 @@
 all: mysort counter 
 
 #Executable for mysort
-mysort: bucketsort_main.o threaded_bucketsort.o array_splitter.o
-	g++ bucketsort_main.o threaded_bucketsort.o array_splitter.o -pthread -g -o mysort
+mysort: bucketsort_main.o threaded_bucketsort.o array_splitter.o sense_barrier.o
+	g++ bucketsort_main.o threaded_bucketsort.o array_splitter.o sense_barrier.o -pthread -g -o mysort
 
 #Object Files for mysort
-bucketsort_main.o: bucketsort_main.cpp
-	g++ -c bucketsort_main.cpp
+bucketsort_main.o: mysort_files/bucketsort_main.cpp
+	g++ -c mysort_files/bucketsort_main.cpp
 
-array_splitter.o: array_splitter.cpp array_splitter.hpp
-	g++ -c array_splitter.cpp
+array_splitter.o: mysort_files/array_splitter.cpp mysort_files/array_splitter.hpp
+	g++ -c mysort_files/array_splitter.cpp
 
-threaded_bucketsort.o: threaded_bucketsort.cpp threaded_bucketsort.hpp
-	g++ -c threaded_bucketsort.cpp 
+threaded_bucketsort.o: mysort_files/threaded_bucketsort.cpp mysort_files/threaded_bucketsort.hpp
+	g++ -c mysort_files/threaded_bucketsort.cpp 
 
 #Executable for counter
 counter: counter_main.o threaded_counter.o tas_lock.o ttas_lock.o ticket_lock.o sense_barrier.o
 	g++ counter_main.o  threaded_counter.o tas_lock.o ttas_lock.o ticket_lock.o sense_barrier.o -pthread -g -o counter
 
 #Object Files for counter
-counter_main.o: counter_main.cpp
-	g++ -c counter_main.cpp
+counter_main.o: counter_files/counter_main.cpp
+	g++ -c counter_files/counter_main.cpp
 
-threaded_counter.o: threaded_counter.cpp threaded_counter.hpp
-	g++ -c threaded_counter.cpp 
+threaded_counter.o: counter_files/threaded_counter.cpp counter_files/threaded_counter.hpp
+	g++ -c counter_files/threaded_counter.cpp 
 
 
 #Object Files for Locks

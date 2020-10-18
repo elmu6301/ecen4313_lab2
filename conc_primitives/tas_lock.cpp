@@ -28,18 +28,22 @@ void test_tas_lock(){
     Constructor
 */
 TasLock::TasLock(){
-   flag.clear(); 
+//    flag.clear(); 
+   flag.store(false); 
 }
 
 void TasLock::myTAS(){
-    bool res = flag.test_and_set(); 
+    // bool res = flag.test_and_set(); 
+    bool res = flag.load(); 
     printf(res ? "true": "false"); 
 }
 
 void TasLock::lock(){
-    while(flag.test_and_set() == false); 
+    // while(flag.test_and_set() == false); 
+    while(flag.exchange(true)==true); 
 }
 
 void TasLock::unlock(){
-    flag.clear(); 
+    // flag.clear(); 
+    flag.store(false); 
 }

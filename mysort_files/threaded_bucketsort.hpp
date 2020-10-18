@@ -17,7 +17,18 @@ struct threaded_bucketsort_args {
     std::list<int> * buckets; 
 }; 
 
+//Enumerations to detetermine the type of primitives to use
+enum mysort_imp{
+    SENSE_BAR, 
+    PTHREAD_BAR,
+    TAS_LOCK,
+    TTAS_LOCK,
+    TICKET_LOCK,
+    PTHREAD_LOCK
 
-int run_threaded_bucketsort(int num_threads,std::vector <int> &data ); 
+}; 
+
+int run_threaded_bucketsort(int num_threads, int imp_method, std::vector <int> &data ); 
+int run_threaded_bucketsort_s_bar(int num_threads,std::vector <int> &data ); 
 
 #endif

@@ -6,10 +6,10 @@
 
 //Developer includes
 #include "threaded_counter.hpp"
-#include "conc_primitives/tas_lock.hpp"
-#include "conc_primitives/ttas_lock.hpp"
-#include "conc_primitives/ticket_lock.hpp"
-#include "conc_primitives/sense_barrier.hpp"
+#include "../conc_primitives/tas_lock.hpp"
+#include "../conc_primitives/ttas_lock.hpp"
+#include "../conc_primitives/ticket_lock.hpp"
+#include "../conc_primitives/sense_barrier.hpp"
 
 //Global Variables
 size_t* args;
@@ -29,12 +29,12 @@ SenseBarrier s_bar;
 //Locks
 pthread_mutex_t p_lock; 
 TasLock tas_lock;  
+TtasLock ttas_lock; 
 TicketLock ticket_lock; 
-
-
 
 struct timespec start, end;
 
+//Function Declarations
 void* thread_main(void* args); 
 void* counter_pthread_lock(void* args); 
 void* counter_tas_lock(void* args); 
@@ -74,7 +74,7 @@ void global_init(){
 			break;
 		case TTAS_LOCK:
 			printf("TTAS_LOCK\n"); 
-			thread_foo = &thread_main; 
+			thread_foo = &counter_ttas_lock;  
 			break;
 		case TICKET_LOCK:
 			printf("TICKET_LOCK\n"); 
@@ -216,6 +216,32 @@ void* counter_tas_lock(void* args){
 	return 0;
 }
 
+void* counter_ttas_lock(void* args){
+	size_t tid = *((size_t*)args);
+	local_init();
+	pthread_barrier_wait(&p_bar);
+	if(tid==1){
+		clock_gettime(CLOCK_MONOTONIC,&start);
+	}
+	pthread_barrier_wait(&p_bar);
+	
+	// do something
+	printf("counter_ttas_lock: Thread %zu reporting for duty\n",tid);
+	for(int i = 0; i < NUM_ITER; i++){ 
+		ttas_lock.lock(); 
+		counter++; 
+		ttas_lock.unlock(); 
+	}
+
+	pthread_barrier_wait(&p_bar);
+	if(tid==1){
+		clock_gettime(CLOCK_MONOTONIC,&end);
+	}
+	local_cleanup();
+	
+	return 0;
+}
+
 void* counter_ticket_lock(void* args){
 	size_t tid = *((size_t*)args);
 	local_init();
@@ -307,10 +333,8 @@ int run_threaded_counter(int num_threads, int num_iter, int imp_method, int & fi
 	NUM_THREADS = num_threads;
 	NUM_ITER = num_iter; 
 	IMP_METHOD = imp_method; 
-	test_ticket_lock(); 
 
 	global_init();
-	test_sense_bar(); 
 	// launch threads
 	int ret; size_t i;
   	for(i=1; i<NUM_THREADS; i++){
