@@ -55,33 +55,33 @@ void global_init(){
 	pthread_barrier_init(&p_bar, NULL, NUM_THREADS); //Needed for all the timing analysis
 	counter = 0; 
 
-	printf("\nRunning counter with %ld threads, %ld iterations, and method = ", NUM_THREADS, NUM_ITER); 
+	// printf("\nRunning counter with %ld threads, %ld iterations, and method = ", NUM_THREADS, NUM_ITER); 
 	
 	//Configure global variables based on the input type
 	switch (IMP_METHOD){
 		case SENSE_BAR:
-			printf("SENSE_BAR\n"); 
+			// printf("SENSE_BAR\n"); 
 			thread_foo =  &counter_sense_bar; 
 			s_bar.init(NUM_THREADS); 
 			break;
 		case PTHREAD_BAR:
-			printf("PTHREAD_BAR\n"); 
+			// printf("PTHREAD_BAR\n"); 
 			thread_foo = &counter_pthread_bar;
 			break;
 		case TAS_LOCK:
-			printf("TAS_LOCK\n"); 
+			// printf("TAS_LOCK\n"); 
 			thread_foo = &counter_tas_lock; 
 			break;
 		case TTAS_LOCK:
-			printf("TTAS_LOCK\n"); 
+			// printf("TTAS_LOCK\n"); 
 			thread_foo = &counter_ttas_lock;  
 			break;
 		case TICKET_LOCK:
-			printf("TICKET_LOCK\n"); 
+			// printf("TICKET_LOCK\n"); 
 			thread_foo = &counter_ticket_lock; 
 			break;
 		case PTHREAD_LOCK:
-			printf("PTHREAD_LOCK\n"); 
+			// printf("PTHREAD_LOCK\n"); 
 			p_lock = PTHREAD_MUTEX_INITIALIZER;
 			thread_foo = &counter_pthread_lock; 
 			break;
@@ -98,69 +98,13 @@ void global_cleanup(){
 	free(threads);
 	free(args);
 	pthread_barrier_destroy(&p_bar);
-	printf("\nCleaning counter with method = "); 
+	// printf("\nCleaning counter with method = "); 
 	
-	//Variables to free based on configuratoin
-	switch (IMP_METHOD){
-		case SENSE_BAR:
-			/* code */
-			printf("SENSE_BAR\n"); 
-			 
-			break;
-		case PTHREAD_BAR:
-			/* code */
-			printf("PTHREAD_BAR\n"); 
-			break;
-		case TAS_LOCK:
-			/* code */
-			printf("TAS_LOCK\n"); 
-			// delete &tas_lock; 
-		
-			break;
-		case TTAS_LOCK:
-			/* code */
-			printf("TTAS_LOCK\n"); 
-
-			break;
-		case TICKET_LOCK:
-			/* code */
-			printf("TICKET_LOCK\n"); 
-			
-			break;
-		case PTHREAD_LOCK:
-			/* code */
-			printf("PTHREAD_LOCK\n"); 
-			break;
-
-		default:
-			break;
-	}
 }
 
 
 void local_init(){}
 void local_cleanup(){}
-
-void* thread_main(void* args){
-	size_t tid = *((size_t*)args);
-	local_init();
-	pthread_barrier_wait(&p_bar);
-	if(tid==1){
-		clock_gettime(CLOCK_MONOTONIC,&start);
-	}
-	pthread_barrier_wait(&p_bar);
-	
-	// do something
-	printf("Thread %zu reporting for duty\n",tid);
-	
-	pthread_barrier_wait(&p_bar);
-	if(tid==1){
-		clock_gettime(CLOCK_MONOTONIC,&end);
-	}
-	local_cleanup();
-	
-	return 0;
-}
 
 void* counter_pthread_lock(void* args){
 	size_t tid = *((size_t*)args);
@@ -226,7 +170,7 @@ void* counter_ttas_lock(void* args){
 	pthread_barrier_wait(&p_bar);
 	
 	// do something
-	printf("counter_ttas_lock: Thread %zu reporting for duty\n",tid);
+	// printf("counter_ttas_lock: Thread %zu reporting for duty\n",tid);
 	for(int i = 0; i < NUM_ITER; i++){ 
 		ttas_lock.lock(); 
 		counter++; 
@@ -339,7 +283,7 @@ int run_threaded_counter(int num_threads, int num_iter, int imp_method, int & fi
 	int ret; size_t i;
   	for(i=1; i<NUM_THREADS; i++){
 		args[i]=i+1;
-		printf("creating thread %zu\n",args[i]);
+		// printf("creating thread %zu\n",args[i]);
 		ret = pthread_create(&threads[i], NULL, thread_foo, &args[i]);
 		if(ret){
 			printf("ERROR; pthread_create: %d\n", ret);
@@ -357,9 +301,8 @@ int run_threaded_counter(int num_threads, int num_iter, int imp_method, int & fi
 			printf("ERROR; pthread_join: %d\n", ret);
 			exit(-1);
 		}
-		printf("joined thread %zu\n",i+1);
+		// printf("joined thread %zu\n",i+1);
 	}
-	printf("\ncounter = %d\n",counter); 
 	
 	//Check that counter is the right value
 	assert(counter == NUM_THREADS *NUM_ITER); 
@@ -369,7 +312,9 @@ int run_threaded_counter(int num_threads, int num_iter, int imp_method, int & fi
 	
 	//Clean up
 	global_cleanup();
-	
+
+	//print results
+	printf("Timing Results:\n");
 	unsigned long long elapsed_ns;
 	elapsed_ns = (end.tv_sec-start.tv_sec)*1000000000 + (end.tv_nsec-start.tv_nsec);
 	printf("Elapsed (ns): %llu\n",elapsed_ns);

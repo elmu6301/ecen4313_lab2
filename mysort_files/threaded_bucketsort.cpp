@@ -64,11 +64,11 @@ void global_init()
 	threads = (pthread_t *)malloc(NUM_THREADS * sizeof(pthread_t));
 	
 	
-	printf("\nRunning threaded_bucketsort with %ld threads and method = ", NUM_THREADS); 
+	// printf("\nRunning threaded_bucketsort with %ld threads and method = ", NUM_THREADS); 
 
 	switch (IMP_METHOD){
 		case TAS_LOCK_PTHREAD_BAR:
-			printf("TAS_LOCK_PTHREAD_BAR\n");
+			// printf("TAS_LOCK_PTHREAD_BAR\n");
 			//Set to the right function 
 			thread_foo = &bucketsort_tas_p_bar;   
 			//Inialize tas_locks 
@@ -77,7 +77,7 @@ void global_init()
 			pthread_barrier_init(&p_bar, NULL, NUM_THREADS);
 			break;
 		case TTAS_LOCK_PTHREAD_BAR:
-			printf("TTAS_LOCK_PTHREAD_BAR\n");
+			// printf("TTAS_LOCK_PTHREAD_BAR\n");
 			//Set to the right function 
 			thread_foo = &bucketsort_ttas_p_bar; 
 			//Inialize ttas_locks
@@ -86,7 +86,7 @@ void global_init()
 			pthread_barrier_init(&p_bar, NULL, NUM_THREADS);
 			break;
 		case TICKET_LOCK_PTHREAD_BAR:
-			printf("TICKET_LOCK_PTHREAD_BAR\n");
+			// printf("TICKET_LOCK_PTHREAD_BAR\n");
 			//Set to the right function 
 			thread_foo = &bucketsort_ticket_p_bar; 
 			//Inialize ticket_locks 
@@ -95,7 +95,7 @@ void global_init()
 			pthread_barrier_init(&p_bar, NULL, NUM_THREADS);
 			break;
 		case PTHREAD_LOCK_PTHREAD_BAR:
-			printf("PTHREAD_LOCK_PTHREAD_BAR\n"); 
+			// printf("PTHREAD_LOCK_PTHREAD_BAR\n"); 
 			//Set to the right function 
 			thread_foo = &bucketsort_p_lock_p_bar; 
 			//Inialize p_locks
@@ -107,7 +107,7 @@ void global_init()
 			pthread_barrier_init(&p_bar, NULL, NUM_THREADS);
 			break;
 		case TAS_LOCK_SENSE_BAR:
-			printf("TAS_LOCK_SENSE_BAR\n"); 
+			// printf("TAS_LOCK_SENSE_BAR\n"); 
 			//Set to the right function 
 			thread_foo = &bucketsort_tas_s_bar; 
 			//Inialize tas_locks
@@ -116,7 +116,7 @@ void global_init()
 			s_bar.init(NUM_THREADS); 
 			break;
 		case TTAS_LOCK_SENSE_BAR:
-			printf("TTAS_LOCK_SENSE_BAR\n"); 
+			// printf("TTAS_LOCK_SENSE_BAR\n"); 
 			//Set to the right function 
 			thread_foo = &bucketsort_ttas_s_bar; 
 			//Inialize each pthread lock 
@@ -125,7 +125,7 @@ void global_init()
 			s_bar.init(NUM_THREADS); 
 			break;
 		case TICKET_LOCK_SENSE_BAR:
-			printf("TICKET_LOCK_SENSE_BAR\n"); 
+			// printf("TICKET_LOCK_SENSE_BAR\n"); 
 			//Set to the right function 
 			thread_foo = &bucketsort_ticket_s_bar; 
 			//Inialize each pthread lock 
@@ -134,7 +134,7 @@ void global_init()
 			s_bar.init(NUM_THREADS); 
 			break;
 		case PTHREAD_LOCK_SENSE_BAR:
-			printf("PTHREAD_LOCK_SENSE_BAR\n"); 
+			// printf("PTHREAD_LOCK_SENSE_BAR\n"); 
 			//Set to the right function 
 			thread_foo = &bucketsort_p_lock_s_bar;  
 			//Inialize each pthread lock 
@@ -168,43 +168,44 @@ void global_cleanup()
 	free(threads);
 	 
 	
-	printf("\nCleaning counter with method = "); 
+	// printf("\nCleaning counter with method = "); 
 	
 	switch (IMP_METHOD){
 		case TAS_LOCK_PTHREAD_BAR:
-			printf("TAS_LOCK_PTHREAD_BAR\n"); 
+			// printf("TAS_LOCK_PTHREAD_BAR\n"); 
 			pthread_barrier_destroy(&p_bar);
 			delete tas_locks;
 			break;
 		case TTAS_LOCK_PTHREAD_BAR:
-			printf("TTAS_LOCK_PTHREAD_BAR\n"); 
+			// printf("TTAS_LOCK_PTHREAD_BAR\n"); 
 			pthread_barrier_destroy(&p_bar);
 			delete ttas_locks;
 			break;
 		case TICKET_LOCK_PTHREAD_BAR:
-			printf("TICKET_LOCK_PTHREAD_BAR\n"); 
+			// printf("TICKET_LOCK_PTHREAD_BAR\n"); 
 			pthread_barrier_destroy(&p_bar);
 			delete ticket_locks;
 			break;
 		case PTHREAD_LOCK_PTHREAD_BAR:
-			printf("PTHREAD_LOCK_PTHREAD_BAR\n"); 
+			// printf("PTHREAD_LOCK_PTHREAD_BAR\n"); 
 			delete p_locks;
 			pthread_barrier_destroy(&p_bar);
 			break;
 		case TAS_LOCK_SENSE_BAR:
-			printf("TAS_LOCK_SENSE_BAR\n"); 
+			// printf("TAS_LOCK_SENSE_BAR\n"); 
 			delete tas_locks;
 			break;
 		case TTAS_LOCK_SENSE_BAR:
-			printf("TTAS_LOCK_SENSE_BAR\n"); 
+			// printf("TTAS_LOCK_SENSE_BAR\n"); 
 			delete ttas_locks;
 			break;
 		case TICKET_LOCK_SENSE_BAR:
-			printf("TICKET_LOCK_SENSE_BAR\n"); 
+			// printf("TICKET_LOCK_SENSE_BAR\n"); 
 			delete ticket_locks;
 			break;
 		case PTHREAD_LOCK_SENSE_BAR:
-			printf("PTHREAD_LOCK_SENSE_BAR\n"); 
+			// printf("PTHREAD_LOCK_SENSE_BAR\n"); 
+			delete p_locks;
 			break;
 
 		default:
@@ -532,15 +533,6 @@ void *bucketsort_ticket_s_bar(void *args)
 }
 
 
-
-
-
-
-
-
-
-
-
 /*
 	Runs the parallelized bucketsort. Creates and joins all threads and returns
 	the data to main. 
@@ -615,6 +607,7 @@ int run_threaded_bucketsort(int num_threads, int imp_method, std::vector <int> &
 	global_cleanup();
 
 	/* PRINT TIME OUT */
+	printf("Timing Results:\n");
 	unsigned long long elapsed_ns;
 	elapsed_ns = (end.tv_sec - start.tv_sec) * 1000000000 + (end.tv_nsec - start.tv_nsec);
 	printf("Elapsed (ns): %llu\n", elapsed_ns);

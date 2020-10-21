@@ -187,9 +187,8 @@ int main(int argc, char* argv[]){
     int data_size = data.size(); 
     //Check to make sure that the size of data is larger than the number of threads
     if(num_threads>data_size){
-        cout<<"An invalid thread count was entered. The number of threads cannot exceed the amount of data."<<endl; 
-        printUsage(); 
-        return -4; 
+        cout<<"An invalid thread count was entered. The number of threads cannot exceed the amount of data.\nSetting the number of threads to match the amount of data."<<endl; 
+        num_threads = data_size; 
     }
 
     cout<<"Running counter with "<<num_threads<<" threads, '"<<bar<<"' barriers, '"<<lock<<"' locks, input file '"<<srcFile<<"', and outputting to '"<<outFile<<"'"<<endl; 
