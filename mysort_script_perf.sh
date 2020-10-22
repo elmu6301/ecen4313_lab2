@@ -30,28 +30,29 @@ echo
 
 echo "Test Case ${test_case}:${i}-> -t ${threads} --bar=pthread --lock=pthread"
 rm ${test_out}
-./mysort ${test_in} -o ${test_out}  -t ${threads} --alg=bucket --bar=pthread --lock=pthread
+perf stat -e L1-dcache-load-misses -e L1-dcache-load -e branch-misses -e branches ./mysort ${test_in} -o ${test_out}  -t ${threads} --alg=bucket --bar=pthread --lock=pthread
 cmp ${test_out} ${test_sol} && test_res[$i]="SUCCESS" || test_res[$i]="FAILED"
 i=$((i + 1))
 echo 
 
+
 echo "Test Case ${test_case}:${i}-> -t ${threads} --bar=pthread --lock=tas"
 rm ${test_out}
-./mysort ${test_in} -o ${test_out}  -t ${threads} --alg=bucket --bar=pthread --lock=tas
+perf stat -e L1-dcache-load-misses -e L1-dcache-load -e branch-misses -e branches ./mysort ${test_in} -o ${test_out}  -t ${threads} --alg=bucket --bar=pthread --lock=tas
 cmp ${test_out} ${test_sol} && test_res[$i]="SUCCESS" || test_res[$i]="FAILED"
 i=$((i + 1))
 echo 
 
 echo "Test Case ${test_case}:${i}-> -t ${threads} --bar=pthread --lock=ttas"
 rm ${test_out}
-./mysort ${test_in} -o ${test_out}  -t ${threads} --alg=bucket --bar=pthread --lock=ttas
+perf stat -e L1-dcache-load-misses -e L1-dcache-load -e branch-misses -e branches ./mysort ${test_in} -o ${test_out}  -t ${threads} --alg=bucket --bar=pthread --lock=ttas
 cmp ${test_out} ${test_sol} && test_res[$i]="SUCCESS" || test_res[$i]="FAILED"
 i=$((i + 1))
 echo 
 
 echo "Test Case ${test_case}:${i}-> -t ${threads} --bar=pthread --lock=ticket"
 rm ${test_out}
-./mysort ${test_in} -o ${test_out}  -t ${threads} --alg=bucket --bar=pthread --lock=ticket
+perf stat -e L1-dcache-load-misses -e L1-dcache-load -e branch-misses -e branches ./mysort ${test_in} -o ${test_out}  -t ${threads} --alg=bucket --bar=pthread --lock=ticket
 cmp ${test_out} ${test_sol} && test_res[$i]="SUCCESS" || test_res[$i]="FAILED"
 i=$((i + 1))
 echo 
@@ -59,28 +60,28 @@ echo
 # Sense Barrier Test Case
 echo "Test Case ${test_case}:${i}-> -t ${threads} --bar=sense --lock=pthread"
 rm ${test_out}
-./mysort ${test_in} -o ${test_out}  -t ${threads} --alg=bucket --bar=sense  --lock=pthread
+perf stat -e L1-dcache-load-misses -e L1-dcache-load -e branch-misses -e branches ./mysort ${test_in} -o ${test_out}  -t ${threads} --alg=bucket --bar=sense  --lock=pthread
 cmp ${test_out} ${test_sol} && test_res[$i]="SUCCESS" || test_res[$i]="FAILED"
 i=$((i + 1))
 echo 
 
 echo "Test Case ${test_case}:${i}-> -t ${threads} --bar=sense --lock=tas"
 rm ${test_out}
-./mysort ${test_in} -o ${test_out}  -t ${threads} --alg=bucket --bar=sense  --lock=tas
+perf stat -e L1-dcache-load-misses -e L1-dcache-load -e branch-misses -e branches ./mysort ${test_in} -o ${test_out}  -t ${threads} --alg=bucket --bar=sense  --lock=tas
 cmp ${test_out} ${test_sol} && test_res[$i]="SUCCESS" || test_res[$i]="FAILED"
 i=$((i + 1))
 echo 
 
 echo "Test Case ${test_case}:${i}-> -t ${threads} --bar=sense --lock=ttas"
 rm ${test_out}
-./mysort ${test_in} -o ${test_out}  -t ${threads} --alg=bucket --bar=sense --lock=ttas
+perf stat -e L1-dcache-load-misses -e L1-dcache-load -e branch-misses -e branches ./mysort ${test_in} -o ${test_out}  -t ${threads} --alg=bucket --bar=sense --lock=ttas
 cmp ${test_out} ${test_sol} && test_res[$i]="SUCCESS" || test_res[$i]="FAILED"
 i=$((i + 1))
 echo 
 
 echo "Test Case ${test_case}:${i}-> -t ${threads} --bar=sense --lock=ticket"
 rm ${test_out}
-./mysort ${test_in} -o ${test_out}  -t ${threads} --alg=bucket --bar=sense --lock=ticket
+perf stat -e L1-dcache-load-misses -e L1-dcache-load -e branch-misses -e branches ./mysort ${test_in} -o ${test_out}  -t ${threads} --alg=bucket --bar=sense --lock=ticket
 cmp ${test_out} ${test_sol} && test_res[$i]="SUCCESS" || test_res[$i]="FAILED"
 echo 
 

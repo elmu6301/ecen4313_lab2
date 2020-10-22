@@ -8,6 +8,9 @@ Lab 2:
     
 */
 
+/*************************************************
+	FILE INCLUDES
+**************************************************/
 //Library includes
 #include <pthread.h>
 #include <stdio.h>
@@ -24,7 +27,9 @@ Lab 2:
 #include "../conc_primitives/ticket_lock.hpp"
 #include "../conc_primitives/sense_barrier.hpp"
 
-//Global Variables
+/*************************************************
+	GLOBAL VARIABLES
+**************************************************/
 pthread_t *threads;
 size_t NUM_THREADS;
 size_t NUM_BUCKETS; 
@@ -42,10 +47,12 @@ TasLock * tas_locks;
 TtasLock * ttas_locks;
 TicketLock * ticket_locks; 
 
-
 struct timespec start;
 struct timespec end;
 
+/*************************************************
+	FUNCTION DECLARATIONS
+**************************************************/
 void *bucketsort_p_lock_p_bar(void *args); 
 void *bucketsort_tas_p_bar(void *args); 
 void *bucketsort_ttas_p_bar(void *args); 
@@ -56,6 +63,9 @@ void *bucketsort_tas_s_bar(void *args);
 void *bucketsort_ttas_s_bar(void *args); 
 void *bucketsort_ticket_s_bar(void *args); 
 
+/*************************************************
+	GLOBAL INIT AND CLEANING FUNCTIONS
+**************************************************/
 /*
 	Allocates all required data. 
 */
@@ -215,7 +225,12 @@ void global_cleanup()
 		}
 }
 
-
+/*************************************************
+	HELPER FUNCTIONS
+**************************************************/
+/*
+	Concatenates sorted buckets. 
+*/
 std::vector<int> concatenate(std::list<int> * buckets, int num_buckets){
 	std::vector<int> data; 
 	// printf("num_buckets = %d", num_buckets); 
@@ -248,8 +263,12 @@ void printBuckets(std::list<int> * buckets, int num_buckets){
 	printf("\n"); 
 }
 
+/*************************************************
+	BUCKETSORT FUNCTIONS
+**************************************************/
 /*
-	Thread version of bucketsort. Runs bucketsort with the assigned data. 
+	Thread version of bucketsort that uses pthread locks to protect the buckets
+	and pthread barriers for timing. Runs bucketsort with the assigned data. 
 */
 void *bucketsort_p_lock_p_bar(void *args)
 {
@@ -288,7 +307,8 @@ void *bucketsort_p_lock_p_bar(void *args)
 }
 
 /*
-	Thread version of bucketsort. Runs bucketsort with the assigned data. 
+	Thread version of bucketsort that uses tas locks to protect the buckets
+	and pthread barriers for timing. Runs bucketsort with the assigned data. 
 */
 void *bucketsort_tas_p_bar(void *args)
 {
@@ -324,6 +344,10 @@ void *bucketsort_tas_p_bar(void *args)
 	return 0;
 }
 
+/*
+	Thread version of bucketsort that uses ttas locks to protect the buckets
+	and pthread barriers for timing. Runs bucketsort with the assigned data. 
+*/
 void *bucketsort_ttas_p_bar(void *args)
 {
 	size_t tid = ((struct threaded_bucketsort_args *)args)->tid; //*((size_t*)args);
@@ -358,6 +382,10 @@ void *bucketsort_ttas_p_bar(void *args)
 	return 0;
 }
 
+/*
+	Thread version of bucketsort that uses ticket locks to protect the buckets
+	and pthread barriers for timing. Runs bucketsort with the assigned data. 
+*/
 void *bucketsort_ticket_p_bar(void *args)
 {
 	size_t tid = ((struct threaded_bucketsort_args *)args)->tid; //*((size_t*)args);
@@ -392,6 +420,10 @@ void *bucketsort_ticket_p_bar(void *args)
 	return 0;
 }
 
+/*
+	Thread version of bucketsort that uses pthread locks to protect the buckets
+	and sense barriers for timing. Runs bucketsort with the assigned data. 
+*/
 void *bucketsort_p_lock_s_bar(void *args)
 {
 	size_t tid = ((struct threaded_bucketsort_args *)args)->tid; //*((size_t*)args);
@@ -430,6 +462,10 @@ void *bucketsort_p_lock_s_bar(void *args)
 	return 0;
 }
 
+/*
+	Thread version of bucketsort that uses tas locks to protect the buckets
+	and sense barriers for timing. Runs bucketsort with the assigned data. 
+*/
 void *bucketsort_tas_s_bar(void *args)
 {
 	size_t tid = ((struct threaded_bucketsort_args *)args)->tid; //*((size_t*)args);
@@ -464,6 +500,10 @@ void *bucketsort_tas_s_bar(void *args)
 	return 0;
 }
 
+/*
+	Thread version of bucketsort that uses ttas locks to protect the buckets
+	and sense barriers for timing. Runs bucketsort with the assigned data. 
+*/
 void *bucketsort_ttas_s_bar(void *args)
 {
 	size_t tid = ((struct threaded_bucketsort_args *)args)->tid; //*((size_t*)args);
@@ -498,6 +538,10 @@ void *bucketsort_ttas_s_bar(void *args)
 	return 0;
 }
 
+/*
+	Thread version of bucketsort that uses ticket locks to protect the buckets
+	and sense barriers for timing. Runs bucketsort with the assigned data. 
+*/
 void *bucketsort_ticket_s_bar(void *args)
 {
 	size_t tid = ((struct threaded_bucketsort_args *)args)->tid; //*((size_t*)args);
@@ -532,10 +576,12 @@ void *bucketsort_ticket_s_bar(void *args)
 	return 0;
 }
 
-
+/*************************************************
+	THREADED BUCKETSORT
+**************************************************/
 /*
-	Runs the parallelized bucketsort. Creates and joins all threads and returns
-	the data to main. 
+	Runs the parallelized bucketsort with the correct timing barriers and lock implementations.
+	Creates and joins all threads and returns the data to main. 
 */
 int run_threaded_bucketsort(int num_threads, int imp_method, std::vector <int> &data)
 {

@@ -12,12 +12,10 @@ Lab 2:
 
 class TtasLock{
     private: 
-    // std::atomic_flag flag = ATOMIC_FLAG_INIT; 
     std::atomic<bool> flag;
      
     public: 
     TtasLock(); 
-    void myTtAS();
     void lock(); 
     void unlock();  
 

@@ -6,7 +6,9 @@ Lab 2:
 
 */
 
-//Library includes
+/*************************************************
+	FILE INCLUDES
+**************************************************/
 #include <fstream>
 #include <iostream>
 #include <stdio.h>
@@ -20,7 +22,9 @@ using namespace std;
 //Developer includes
 #include "threaded_counter.hpp"
 
-//Global Variables
+/*************************************************
+	GLOBAL VARIABLES
+**************************************************/
 char my_name[] = "Elena Murray"; 
 
 
@@ -34,8 +38,6 @@ void printUsage(){
 
 //main function
 int main(int argc, char* argv[]){
-    // cout <<"Hello world " <<my_name<<endl ; 
-    // printUsage(); 
 
     //variables for parsing the command line
     string outFile; //stores the name of the file to output the data
@@ -174,7 +176,6 @@ int main(int argc, char* argv[]){
     //Call counter here
     run_threaded_counter(num_threads, num_iter, imp_method, final_cnt); 
 
-    cout<<"Final count "<<final_cnt<<endl; 
     // Output sorted data to output file
     ofstream fileOut; 
     fileOut.open(outFile); 
@@ -186,9 +187,5 @@ int main(int argc, char* argv[]){
     fileOut<<final_cnt<<endl; 
 
     fileOut.close();  
-
-
-
-
 
 }

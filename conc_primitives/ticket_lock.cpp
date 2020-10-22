@@ -6,6 +6,9 @@ Lab 2:
     
 */
 
+/*************************************************
+	FILE INCLUDES
+**************************************************/
 //Library includes
 #include <stdio.h>
 #include <iostream>
@@ -13,17 +16,21 @@ Lab 2:
 #include <unistd.h>
 #include <atomic>
 
-using namespace std; 
+using namespace std;
+
 //Developer includes
 #include "ticket_lock.hpp"
 
-//Functions
+/*************************************************
+	FUNCTIONS
+**************************************************/
 void test_ticket_lock(){
     printf("\nticket_lock\n"); 
 }
 
-//Class functions
-
+/*************************************************
+	CLASS FUNCTIONS
+**************************************************/
 /*
     Constructor
 */
@@ -32,12 +39,17 @@ TicketLock::TicketLock(){
     now_serving.store(0); 
 }
 
-
+/*
+    Aquires the lock
+*/
 void TicketLock::lock(){
     int my_num = atomic_fetch_add_explicit(&next_num, 1, memory_order_seq_cst); 
     while(atomic_load_explicit(&now_serving,memory_order_seq_cst) !=my_num); 
 }
 
+/*
+    Releases the lock
+*/
 void TicketLock::unlock(){
     atomic_fetch_add_explicit(&now_serving, 1, memory_order_seq_cst); 
 }

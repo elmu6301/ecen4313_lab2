@@ -6,6 +6,9 @@ Lab 2:
     
 */
 
+/*************************************************
+	FILE INCLUDES
+**************************************************/
 //Library includes
 #include <stdio.h>
 #include <iostream>
@@ -13,17 +16,21 @@ Lab 2:
 #include <unistd.h>
 #include <atomic>
 
-using namespace std; 
+using namespace std;
+
 //Developer includes
 #include "sense_barrier.hpp"
 
-//Functions
+/*************************************************
+	FUNCTIONS
+**************************************************/
 void test_sense_bar(){
     printf("\nsense_barrier\n"); 
 }
 
-//Class functions
-
+/*************************************************
+	CLASS FUNCTIONS
+**************************************************/
 /*
     Constructor
 */
@@ -35,7 +42,7 @@ void SenseBarrier::init(int NUM_THREADS){
 
 
 /*
-    Constructor
+    Barrier wait.
 */
 void SenseBarrier::wait(){
     thread_local bool my_sense = false; 
@@ -50,8 +57,8 @@ void SenseBarrier::wait(){
         //reset the counter
         atomic_store_explicit(&cnt, 0, memory_order_relaxed); 
         //flip the overall sense
-        atomic_store_explicit(&sense, my_sense, memory_order_relaxed); 
+        atomic_store_explicit(&sense, my_sense, memory_order_seq_cst); 
     }else{// otherwise wait till the last thread arrives
-        while(atomic_load_explicit(&sense, memory_order_relaxed)!=my_sense); 
+        while(atomic_load_explicit(&sense, memory_order_seq_cst)!=my_sense); 
     }
 }

@@ -1,3 +1,16 @@
+/*
+ECEN 4313: Concurrent Programming
+Author: Elena Murray
+Date: 9/30/2020
+Lab 2: 
+
+*Note modified from test.c provide
+    
+*/
+
+/*************************************************
+	FILE INCLUDES
+**************************************************/
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,7 +24,9 @@
 #include "../conc_primitives/ticket_lock.hpp"
 #include "../conc_primitives/sense_barrier.hpp"
 
-//Global Variables
+/*************************************************
+	GLOBAL VARIABLES
+**************************************************/
 size_t* args;
 size_t NUM_THREADS;
 size_t NUM_ITER; 
@@ -34,7 +49,9 @@ TicketLock ticket_lock;
 
 struct timespec start, end;
 
-//Function Declarations
+/*************************************************
+	FUNCTION DECLARATIONS
+**************************************************/
 void* thread_main(void* args); 
 void* counter_pthread_lock(void* args); 
 void* counter_tas_lock(void* args); 
@@ -46,7 +63,12 @@ void* counter_pthread_bar(void* args);
 void* counter_sense_bar(void* args); 
 
 
-
+/*************************************************
+	GLOBAL INIT AND CLEANING FUNCTIONS
+**************************************************/
+/*
+	Allocates all required data. 
+*/
 void global_init(){
 
 	//Variables used in all cases
@@ -92,20 +114,26 @@ void global_init(){
 }
 
 
-
+/*
+	Frees all allocated data. 
+*/
 void global_cleanup(){
 	//Variables to free everytime
 	free(threads);
 	free(args);
 	pthread_barrier_destroy(&p_bar);
-	// printf("\nCleaning counter with method = "); 
-	
 }
 
 
 void local_init(){}
 void local_cleanup(){}
 
+/*************************************************
+	COUNTER FUNCTIONS
+**************************************************/
+/*
+	Thread version of counter that uses a pthread lock to protect counter. 
+*/
 void* counter_pthread_lock(void* args){
 	size_t tid = *((size_t*)args);
 	local_init();
@@ -115,8 +143,6 @@ void* counter_pthread_lock(void* args){
 	}
 	pthread_barrier_wait(&p_bar);
 	
-	// do something
-	// printf("counter_pthread_lock: Thread %zu reporting for duty\n",tid);
 	for(int i = 0; i < NUM_ITER; i++){
 		pthread_mutex_lock(&p_lock); 
 		counter++; 
@@ -132,6 +158,9 @@ void* counter_pthread_lock(void* args){
 	return 0;
 }
 
+/*
+	Thread version of counter that uses a tas lock to protect counter. 
+*/
 void* counter_tas_lock(void* args){
 	size_t tid = *((size_t*)args);
 	local_init();
@@ -140,15 +169,11 @@ void* counter_tas_lock(void* args){
 		clock_gettime(CLOCK_MONOTONIC,&start);
 	}
 	pthread_barrier_wait(&p_bar);
-	
-	// do something
-	// printf("counter_tas_lock: Thread %zu reporting for duty\n",tid);
+
 	for(int i = 0; i < NUM_ITER; i++){
-		// pthread_mutex_lock(&p_lock); 
 		tas_lock.lock(); 
 		counter++; 
 		tas_lock.unlock(); 
-		// pthread_mutex_unlock(&p_lock);
 	}
 
 	pthread_barrier_wait(&p_bar);
@@ -160,6 +185,9 @@ void* counter_tas_lock(void* args){
 	return 0;
 }
 
+/*
+	Thread version of counter that uses a ttas lock to protect counter.  
+*/
 void* counter_ttas_lock(void* args){
 	size_t tid = *((size_t*)args);
 	local_init();
@@ -168,9 +196,7 @@ void* counter_ttas_lock(void* args){
 		clock_gettime(CLOCK_MONOTONIC,&start);
 	}
 	pthread_barrier_wait(&p_bar);
-	
-	// do something
-	// printf("counter_ttas_lock: Thread %zu reporting for duty\n",tid);
+
 	for(int i = 0; i < NUM_ITER; i++){ 
 		ttas_lock.lock(); 
 		counter++; 
@@ -186,6 +212,9 @@ void* counter_ttas_lock(void* args){
 	return 0;
 }
 
+/*
+	Thread version of counter that uses a ticket lock to protect counter. 
+*/
 void* counter_ticket_lock(void* args){
 	size_t tid = *((size_t*)args);
 	local_init();
@@ -195,8 +224,6 @@ void* counter_ticket_lock(void* args){
 	}
 	pthread_barrier_wait(&p_bar);
 	
-	// do something
-	// printf("counter_ticket_lock: Thread %zu reporting for duty\n",tid);
 	for(int i = 0; i < NUM_ITER; i++){
 		ticket_lock.lock();  
 		counter++; 
@@ -212,6 +239,9 @@ void* counter_ticket_lock(void* args){
 	return 0;
 }
 
+/*
+	Thread version of counter that uses a pthread barrier to protect counter. 
+*/
 void* counter_pthread_bar(void* args){
 	size_t tid = *((size_t*)args);
 	local_init();
@@ -221,7 +251,6 @@ void* counter_pthread_bar(void* args){
 	}
 	pthread_barrier_wait(&p_bar);
 	
-	//do counting
 	for(int i = 0; i < NUM_ITER * NUM_THREADS; i++){
 		if(i%NUM_THREADS+1==tid){
 			counter++; 
@@ -240,6 +269,9 @@ void* counter_pthread_bar(void* args){
 	return 0;
 }
 
+/*
+	Thread version of counter that uses a sense barrier to protect counter. 
+*/
 void* counter_sense_bar(void* args){
 	size_t tid = *((size_t*)args);
 	local_init();
@@ -249,7 +281,6 @@ void* counter_sense_bar(void* args){
 	}
 	pthread_barrier_wait(&p_bar);
 	
-	//do counting
 	for(int i = 0; i < NUM_ITER * NUM_THREADS; i++){
 		if(i%NUM_THREADS+1==tid){
 			counter++; 
@@ -257,7 +288,6 @@ void* counter_sense_bar(void* args){
 		}
 		s_bar.wait(); 
 	}
-
 
 	pthread_barrier_wait(&p_bar);
 	if(tid==1){
@@ -268,18 +298,25 @@ void* counter_sense_bar(void* args){
 	return 0;
 }
 
-
-
-
+/*************************************************
+	THREADED COUNTER 
+**************************************************/
+/*
+	Runs the parallelized counter. Creates and joins all threads and returns
+	the data to main. 
+*/
 int run_threaded_counter(int num_threads, int num_iter, int imp_method, int & final_cntr){
 	
-	//Update global variables
+	/* SETUP GLOBAL VARIABLES */
 	NUM_THREADS = num_threads;
 	NUM_ITER = num_iter; 
 	IMP_METHOD = imp_method; 
 
+	/* INITIALIZE THREADS, LOCKS, & BARRIERS */
 	global_init();
-	// launch threads
+	
+	
+	/* LAUNCH THREADS */
 	int ret; size_t i;
   	for(i=1; i<NUM_THREADS; i++){
 		args[i]=i+1;
@@ -294,7 +331,7 @@ int run_threaded_counter(int num_threads, int num_iter, int imp_method, int & fi
 	//run counter on the main/master thread
 	(*thread_foo)(&i); 
 	
-	// join threads
+	/* JOIN THREADS */
 	for(size_t i=1; i<NUM_THREADS; i++){
 		ret = pthread_join(threads[i],NULL);
 		if(ret){
@@ -304,16 +341,16 @@ int run_threaded_counter(int num_threads, int num_iter, int imp_method, int & fi
 		// printf("joined thread %zu\n",i+1);
 	}
 	
-	//Check that counter is the right value
-	assert(counter == NUM_THREADS *NUM_ITER); 
+	/* CHECK & RETURN COUNTER */
+	assert(counter == NUM_THREADS *NUM_ITER); 	//Check that counter is the right value
 	
 	//Return the counter
 	final_cntr = counter; 
 	
-	//Clean up
+	/* CLEAN UP */
 	global_cleanup();
 
-	//print results
+	/* PRINT TIME OUT */
 	printf("Timing Results:\n");
 	unsigned long long elapsed_ns;
 	elapsed_ns = (end.tv_sec-start.tv_sec)*1000000000 + (end.tv_nsec-start.tv_nsec);

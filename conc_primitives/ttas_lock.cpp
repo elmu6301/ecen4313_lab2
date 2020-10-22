@@ -5,7 +5,9 @@ Date: 9/30/2020
 Lab 2: 
     
 */
-
+/*************************************************
+	FILE INCLUDES
+**************************************************/
 //Library includes
 #include <stdio.h>
 #include <iostream>
@@ -13,16 +15,20 @@ Lab 2:
 #include <atomic>
 
 using namespace std; 
+
 //Developer includes
 #include "ttas_lock.hpp"
 
-//Functions
+/*************************************************
+	FUNCTIONS
+**************************************************/
 void test_ttas_lock(){
     printf("\nttas_lock\n"); 
 }
 
-//Class functions
-
+/*************************************************
+	CLASS FUNCTIONS
+**************************************************/
 /*
     Constructor
 */
@@ -30,16 +36,17 @@ TtasLock::TtasLock(){
     flag.store(false); 
 }
 
-void TtasLock::myTtAS(){
-    bool res = flag.load(); 
-    printf(res ? "true": "false"); 
-}
-
+/*
+    Aquires the lock
+*/
 void TtasLock::lock(){
     while(flag.load() == true || flag.exchange(true) == true); 
 
 }
 
+/*
+    Releases the lock
+*/
 void TtasLock::unlock(){
     flag.store(false); 
 }

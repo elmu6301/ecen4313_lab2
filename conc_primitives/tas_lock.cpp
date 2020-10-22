@@ -6,6 +6,9 @@ Lab 2:
     
 */
 
+/*************************************************
+	FILE INCLUDES
+**************************************************/
 //Library includes
 #include <stdio.h>
 #include <iostream>
@@ -13,37 +16,39 @@ Lab 2:
 #include <unistd.h>
 #include <atomic>
 
-using namespace std; 
+using namespace std;
+
 //Developer includes
 #include "tas_lock.hpp"
 
-//Functions
+/*************************************************
+	FUNCTIONS
+**************************************************/
 void test_tas_lock(){
     printf("\ntas_lock\n"); 
 }
 
-//Class functions
-
+/*************************************************
+	CLASS FUNCTIONS
+**************************************************/
 /*
     Constructor
 */
 TasLock::TasLock(){
-//    flag.clear(); 
    flag.store(false); 
 }
 
-void TasLock::myTAS(){
-    // bool res = flag.test_and_set(); 
-    bool res = flag.load(); 
-    printf(res ? "true": "false"); 
-}
-
+/*
+    Aquires the lock
+*/
 void TasLock::lock(){
-    // while(flag.test_and_set() == false); 
+    //Since flag is an atomic bool using exchange for tas implemenation
     while(flag.exchange(true)==true); 
 }
 
+/*
+    Releases the lock
+*/
 void TasLock::unlock(){
-    // flag.clear(); 
     flag.store(false); 
 }
